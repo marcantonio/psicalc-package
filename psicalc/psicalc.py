@@ -77,6 +77,17 @@ def deweese_schema(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def check_for_duplicates(df: pd.DataFrame) -> pd.DataFrame:
+    """Removes duplicate sequences based on sequence label only."""
+    raw_data = len(df.index)
+    df = df[~df.index.duplicated(keep='first')]
+    dd = len(df.index)
+    if raw_data != dd:
+        print((raw_data - dd), " rows removed due to duplicate SEQUENCE_ID")
+
+    return df
+
+
 def read_txt_file_format(file) -> pd.DataFrame:
     """Reads FASTA files or text file-based MSAs into a dataframe."""
     nucs_dict = dict()
@@ -98,7 +109,7 @@ def read_txt_file_format(file) -> pd.DataFrame:
     df = pd.DataFrame.from_dict(nucs_dict, orient='index')
     df = df.replace({'.': '-'})
     df.index.name = 'SEQUENCE_ID'
-    df.drop_duplicates(inplace=True)
+    df = check_for_duplicates(df)
 
     return df
 
@@ -108,7 +119,7 @@ def read_csv_file_format(file) -> pd.DataFrame:
     df = pd.read_csv(file, encoding='utf-8', engine='c', header=None)
     df = df.rename(columns={df.columns[0]: 'SEQUENCE_ID'})
     df = df.set_index('SEQUENCE_ID', drop=True)
-    df.drop_duplicates(inplace=True)
+    df = check_for_duplicates(df)
 
     return df
 
