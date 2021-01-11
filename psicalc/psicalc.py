@@ -180,17 +180,24 @@ def return_new_mode(location: int, c: list) -> list:
     return c
 
 
-def list_contains(list1, list2, capture_sets):
-    """Finds clusters with overlapping attributes"""
-    set1 = set(list1)
-    for each in list2:
-        set2 = set(each)
-        if set1 != set2 and set1.intersection(set2):
-            set1 = set1.union(set2)
-        else:
-            pass
-    if set1 not in capture_sets:
-        capture_sets.append(set1)
+def list_contains(list1: list) -> list:
+    """Finds clusters with overlapping attributes and consolidates them inplace"""
+    #TODO: Fix bug where two sets like (56, 64) and (64, 56) don't get captured
+    idx = 0
+    list1 = [set(x) for x in list1]
+    while idx < len(list1):
+        iex = 0
+        while iex < len(list1):
+            if list1[idx] != list1[iex] and list1[idx].intersection(list1[iex]):
+                list1[idx] = list1[idx].union(list1[iex])
+                del list1[iex]
+            else:
+                pass
+            iex += 1
+        idx += 1
+    new_list = [list(x) for x in list1]
+
+    return new_list
 
 
 def write_output_data(spread: int, csv_dict: dict):
@@ -291,25 +298,23 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
     for cluster in subset_list:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, hash_list, k)
     sorted_list = sorted(hash_list, key=lambda x: x[0], reverse=True)
-    N = int(len(sorted_list) * 1 / 3)
-    out_list = sorted_list[:N]
+    out_list = [x for x in sorted_list if x[0] >= 0.15]
     dataframe_label_list = [j for x, j in out_list]
 
     # Check for repeat attributes between pairwise clusters
-    capture_list = list()
-    for each in dataframe_label_list:
-        list_contains(each, dataframe_label_list, capture_list)
-    final_df_set = [list(sets) for sets in capture_list]
-
+    final_df_set = list_contains(dataframe_label_list)
     unranked = list()
     k = "post-agg"  # means clusters which were merged during post-aggregation
     for cluster in final_df_set:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, unranked, k)
 
     C = sorted(unranked, key=lambda x: x[0], reverse=True)
+    print("This is C: \n", C)
     for x, j in C:
         for col in j:
+            print(col)
             msa_index.remove(col)
+
     print("\nTop ranked clusters:")
     num = 0
     for each in C:
