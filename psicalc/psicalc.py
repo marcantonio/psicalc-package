@@ -308,7 +308,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
     # Check for repeat attributes between pairwise clusters
     final_df_set = aggregate(dataframe_label_list)
     unranked = list()
-    k = "post-agg"  # means clusters which were merged during post-aggregation
+    k = "post-agg"  # means clusters which made it through post-aggregation
     for cluster in final_df_set:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, unranked, k)
 
@@ -323,6 +323,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
     for each in C:
         num += 1
         print(num, ": ", each[1])
+
     # Sets the number of clusters we're actually iterating over
     R = len(C)
     for remaining in msa_index:
@@ -332,7 +333,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
     k = len(C)
     num_clusters = len(C[0:R])
 
-    while len(C) >= 2:
+    while len(C) >= 1:
         print("\nNumber of Clusters Remaining: ", num_clusters)
         i = 0
         while i < num_clusters:
@@ -352,7 +353,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
             i += 1
             k -= 1
             print("k = ", k)
-            if len(C) == 2:
+            if len(C) == 1:
                 break
             if location <= num_clusters:
                 num_clusters -= 1
@@ -361,8 +362,9 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
         C = sorted(C, key=lambda x: x[0], reverse=True)
         print(" --> Next run at ", len(C))
 
-        if num_clusters <= 2:
+        if num_clusters <= 1:
             break
+
     print("\n\n--- took " + str(time.time() - start_time) + " seconds ---")
 
     return csv_dict
