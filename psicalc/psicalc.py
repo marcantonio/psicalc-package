@@ -180,24 +180,27 @@ def return_new_mode(location: int, c: list) -> list:
     return c
 
 
-def list_contains(list1: list) -> list:
-    """Finds clusters with overlapping attributes and consolidates them inplace"""
-    #TODO: Fix bug where two sets like (56, 64) and (64, 56) don't get captured
+def aggregate(agg: list) -> list:
+    """Finds clusters with overlapping attributes and consolidates them inplace."""
     idx = 0
-    list1 = [set(x) for x in list1]
-    while idx < len(list1):
+    while idx < len(agg):
         iex = 0
-        while iex < len(list1):
-            if list1[idx] != list1[iex] and list1[idx].intersection(list1[iex]):
-                list1[idx] = list1[idx].union(list1[iex])
-                del list1[iex]
+        while iex < len(agg):
+            # check for intersections
+            set1, set2 = set(agg[idx]), set(agg[iex])
+            if set1 != set2 and set1.intersection(set2):
+                agg[idx] = list(set1.union(set2))
+                del agg[iex]
+            # check for permutations
+            elif set1 == set2:
+                if agg[idx][0] != agg[iex][0]:
+                    del agg[iex]
             else:
                 pass
             iex += 1
         idx += 1
-    new_list = [list(x) for x in list1]
 
-    return new_list
+    return agg
 
 
 def write_output_data(spread: int, csv_dict: dict):
@@ -297,12 +300,13 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
 
     for cluster in subset_list:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, hash_list, k)
+
     sorted_list = sorted(hash_list, key=lambda x: x[0], reverse=True)
     out_list = [x for x in sorted_list if x[0] >= 0.15]
     dataframe_label_list = [j for x, j in out_list]
 
     # Check for repeat attributes between pairwise clusters
-    final_df_set = list_contains(dataframe_label_list)
+    final_df_set = aggregate(dataframe_label_list)
     unranked = list()
     k = "post-agg"  # means clusters which were merged during post-aggregation
     for cluster in final_df_set:
@@ -312,7 +316,6 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
     print("This is C: \n", C)
     for x, j in C:
         for col in j:
-            print(col)
             msa_index.remove(col)
 
     print("\nTop ranked clusters:")
