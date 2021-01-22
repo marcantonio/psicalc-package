@@ -47,13 +47,16 @@ def durston_schema(df: pd.DataFrame, value: int) -> pd.DataFrame:
     return df
 
 
-def deweese_schema(df: pd.DataFrame) -> pd.DataFrame:
+def deweese_schema(df: pd.DataFrame, pattern='^-') -> pd.DataFrame:
     """Labels data based on the range on the first row of the MSA.
     For example, if the first row is labelled TOP2 YEAST/59-205, then all
-    columns with individuals in the first row are kept and labeled 59-205."""
+    columns with individuals in the first row are kept and labeled 59-205.
+
+    As an option, you can supply a different regex if the MSA uses different
+    symbols to represent insertions."""
 
     try:
-        df = df.rename(columns=lambda x: x - 1)
+        df = df.rename(columns=lambda x: x)
         first_row_ix = df.index[0]
         ix_label = first_row_ix.rsplit('/', 1)
         ix_label = ix_label[1]
@@ -61,14 +64,20 @@ def deweese_schema(df: pd.DataFrame) -> pd.DataFrame:
         df_label = int(ix_label[0])
         column_lab_dict = dict()
 
-        pattern = '^-'
-
-        for i in df:
-            if not re.search(pattern, df[i].iloc[0]):
-                column_lab_dict[df.columns[i]] = df_label
-                df_label += 1
-            else:
-                column_lab_dict[df.columns[i]] = ''
+        if pattern == 'None':
+            for i in df:
+                if df[i].iloc[0] is not None:
+                    column_lab_dict[df.columns[i]] = df_label
+                    df_label += 1
+                else:
+                    column_lab_dict[df.columns[i]] = ''
+        else:
+            for i in df:
+                if not re.search(pattern, df[i].iloc[0]):
+                    column_lab_dict[df.columns[i]] = df_label
+                    df_label += 1
+                else:
+                    column_lab_dict[df.columns[i]] = ''
         df = df.rename(columns=column_lab_dict)
         df = df.drop(columns=[''])
         df = df.rename(columns=lambda x: int(x))
@@ -313,7 +322,6 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, unranked, k)
 
     C = sorted(unranked, key=lambda x: x[0], reverse=True)
-    print("This is C: \n", C)
     for x, j in C:
         for col in j:
             msa_index.remove(col)
