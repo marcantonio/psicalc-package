@@ -21,7 +21,7 @@ utilizing normalized mutual information.
 
 Contact: thomas@mandosoft.dev, joe.deweese@lipscomb.edu, kirkdurston@gmail.com
 """
-
+import sys
 import re
 import time
 import csv
@@ -56,9 +56,11 @@ def deweese_schema(df: pd.DataFrame, pattern='^-') -> pd.DataFrame:
     symbols to represent insertions."""
 
     try:
-        df = df.rename(columns=lambda x: x)
         first_row_ix = df.index[0]
-        ix_label = first_row_ix.rsplit('/', 1)
+        if '(' in first_row_ix:
+            ix_label = first_row_ix.rsplit('(', 1)
+        else:
+            ix_label = first_row_ix.rsplit('/', 1)
         ix_label = ix_label[1]
         ix_label = ix_label.rsplit('-', 1)
         df_label = int(ix_label[0])
@@ -78,11 +80,15 @@ def deweese_schema(df: pd.DataFrame, pattern='^-') -> pd.DataFrame:
                     df_label += 1
                 else:
                     column_lab_dict[df.columns[i]] = ''
+
         df = df.rename(columns=column_lab_dict)
-        df = df.drop(columns=[''])
+        if '' in column_lab_dict.values():
+            df = df.drop(columns=[''])
         df = df.rename(columns=lambda x: int(x))
+
     except IndexError or KeyError:
-        exit(1)
+        sys.exit(1)
+
     return df
 
 
@@ -129,6 +135,7 @@ def read_csv_file_format(file) -> pd.DataFrame:
     df = df.rename(columns={df.columns[0]: 'SEQUENCE_ID'})
     df = df.set_index('SEQUENCE_ID', drop=True)
     df = check_for_duplicates(df)
+    df.columns = range(len(df.columns))
 
     return df
 
