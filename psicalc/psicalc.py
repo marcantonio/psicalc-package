@@ -202,15 +202,19 @@ def aggregate(agg: list) -> list:
     while idx < len(agg):
         iex = 0
         while iex < len(agg):
-            # check for intersections
             set1, set2 = set(agg[idx]), set(agg[iex])
+
+            # check for intersections
             if set1 != set2 and set1.intersection(set2):
                 agg[idx] = list(set1.union(set2))
                 del agg[iex]
+                iex -= 1
+
             # check for permutations
             elif set1 == set2:
                 if agg[idx][0] != agg[iex][0]:
                     del agg[iex]
+                    iex -= 1
             else:
                 pass
             iex += 1
@@ -329,9 +333,15 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, unranked, k)
 
     C = sorted(unranked, key=lambda x: x[0], reverse=True)
+
     for x, j in C:
         for col in j:
-            msa_index.remove(col)
+            try:
+                msa_index.remove(col)
+            except ValueError:
+                print("\nFAILED: Tried to remove site location ", col, "but it was not found.\n"
+                       "This is likely due to duplicates not being removed during aggregation.")
+                sys.exit()
 
     print("\nTop ranked clusters:")
     num = 0
