@@ -1,4 +1,4 @@
-# Psi-Calc
+# PSICalc Algorithm Package
 
 This is a package for clustering Multiple Sequence Alignments (MSAs) utilizing normalized mutual information to examine protein subdomains. A complete data visualization tool for psicalc
 is available here: https://github.com/mandosoft/psi-calc.
