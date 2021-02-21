@@ -150,10 +150,12 @@ def return_sr_mode(msa: np.ndarray, m_map: dict, c: list, csv_dict: dict, list_s
         i, j = m_map.get(c[0]), m_map.get(c[1])
         max_sum = nmis(msa[:, i], msa[:, j], average_method='geometric')
         new_mode = c
+        """
         if max_sum > 1.0:
             print("\nERROR: Score returned greater than 1.0: ")
             print(c, max_sum)
             exit(1)
+        """
     else:
         A = [[column, []] for column in range(len(c))]
         D = len(A)
@@ -322,7 +324,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, hash_list, k)
 
     sorted_list = sorted(hash_list, key=lambda x: x[0], reverse=True)
-    out_list = [x for x in sorted_list if x[0] >= 0.15]
+    out_list = [x for x in sorted_list if x[0] >= 0.10]
     dataframe_label_list = [j for x, j in out_list]
 
     # Check for repeat attributes between pairwise clusters
