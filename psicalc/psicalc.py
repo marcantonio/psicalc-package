@@ -125,6 +125,7 @@ def read_txt_file_format(file) -> pd.DataFrame:
     df = df.replace({'.': '-'})
     df.index.name = 'SEQUENCE_ID'
     df = check_for_duplicates(df)
+    df.fillna('?', inplace=True)
 
     return df
 
@@ -135,6 +136,9 @@ def read_csv_file_format(file) -> pd.DataFrame:
     df = df.rename(columns={df.columns[0]: 'SEQUENCE_ID'})
     df = df.set_index('SEQUENCE_ID', drop=True)
     df = check_for_duplicates(df)
+    df.fillna('?', inplace=True)
+    if df.index[0] == "Domain: Data":
+        df.drop(index=["Domain: Data"], inplace=True)
     df.columns = range(len(df.columns))
 
     return df
@@ -290,6 +294,32 @@ def encode_msa(df: pd.DataFrame) -> np.ndarray:
     np_matrix = df.to_numpy()
 
     return np_matrix
+
+
+def remove_high_insertion_sites(df: pd.DataFrame, value: int) -> pd.DataFrame:
+    """Useful for removing high insertion columns from MSA data.
+    Returns the pandas dataframe with high insertion attributes removed.
+
+    Provide percentage value to remove as a whole number, i.e. 15 % == 15
+    """
+
+    df.replace({'[-#?.]': None}, regex=True, inplace=True)
+    index_len = len(df.index)
+    null_val = float(value) / 100
+    labels_to_delete = []
+
+    def series_remove_insertions(x):
+        non_nulls = x.count()
+        info_amount = non_nulls / index_len
+        if info_amount < null_val:
+            labels_to_delete.append(x.name)
+
+    # noinspection PyTypeChecker
+    df.apply(series_remove_insertions, axis=0)
+    df.drop(labels_to_delete, axis=1, inplace=True)
+    df.replace({None: '-'}, inplace=True)
+
+    return df
 
 
 def find_clusters(spread: int, df: pd.DataFrame) -> dict:
