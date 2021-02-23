@@ -256,11 +256,15 @@ def rectify_sequences(df: pd.DataFrame) -> pd.DataFrame:
     """Corrects symbols in the multiple sequence alignment."""
     alpha = get_unique_elements(df)
     pattern = '[-#?.]'
+    allowed = '[ACDEFGHIKLMNPQRSTVWY]'
+    invalid = '[BJOUXZ]|[bjouxz]'
     for symbol in alpha:
-        if symbol.isupper() and len(symbol) == 1:
+        if re.search(allowed, symbol):
             pass
         else:
-            if symbol.islower() and len(symbol) == 1:
+            if re.search(invalid, symbol):
+                df.replace(symbol, '-', inplace=True)
+            elif symbol.islower() and len(symbol) == 1:
                 df.replace(symbol, symbol.upper(), inplace=True)
             elif re.search(pattern, symbol):
                 df.replace(symbol, '-', inplace=True)
@@ -287,7 +291,7 @@ def encode_msa(df: pd.DataFrame) -> np.ndarray:
         else:
             ent += 1
             df.replace(symbol, ent, inplace=True)
-    if ent > 22:
+    if ent > 21:
         print("FAILED: Too many labels encoded: ", ent)
         exit(1)
     print("\nNumber of labels encoded: ", (ent + 1), " including gaps.")

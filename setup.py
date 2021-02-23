@@ -10,7 +10,7 @@ setuptools.setup(
     keywords=['bioinformatics'],
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version="0.2.2",
+    version="0.2.3",
     author="Thomas Townsley",
     author_email="thomas@mandosoft.dev",
     description="Algorithm for clustering protein multiple sequence alignments using normalized mutual information.",
