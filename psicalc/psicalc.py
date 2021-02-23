@@ -282,7 +282,7 @@ def encode_msa(df: pd.DataFrame) -> np.ndarray:
     unique integers and returns a numpy matrix"""
     ent = 0
     alpha = get_unique_elements(df)
-    if alpha.size > 22:
+    if alpha.size > 21:
         df = rectify_sequences(df)
         alpha = get_unique_elements(df)
     for symbol in alpha:
