@@ -28,7 +28,7 @@ import csv
 import pandas as pd
 import numpy as np
 from itertools import combinations
-from sklearn.metrics.cluster import normalized_mutual_info_score as nmis
+from .nmi import normalized_mutual_info_score as nmis
 
 
 def select_subset(c_list: list, s: int):
@@ -115,7 +115,7 @@ def read_txt_file_format(file) -> pd.DataFrame:
 
     vals = string_without_line_breaks.split('>')
     for line in vals:
-        line = re.split('(\w+/\d*-?\d*)', line)
+        line = re.split('([\w\|]+/\d*-?\d*)', line)
         line.remove('')
         for i in enumerate(line):
             g = list(line[1])
@@ -306,7 +306,6 @@ def remove_high_insertion_sites(df: pd.DataFrame, value: int) -> pd.DataFrame:
 
     Provide percentage value to remove as a whole number, i.e. 15 % == 15
     """
-
     df.replace({'[-#?.]': None}, regex=True, inplace=True)
     index_len = len(df.index)
     null_val = float(value) / 100
@@ -343,7 +342,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
 
     print("\nLooking for strong pairwise clusters...")
     for item, each in enumerate(subset_list):
-        max_rii, best_cluster = 0, None
+        max_rii, best_cluster = 0.0, None
         for location, cluster in enumerate(msa_index):
             cluster_mode = msa_map.get(cluster)
             subset_mode = msa_map.get(each[0])
@@ -351,10 +350,14 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
                 rii = nmis(num_msa[:, subset_mode], num_msa[:, cluster_mode], average_method='geometric')
                 if rii > max_rii:
                     max_rii, best_cluster = rii, location
-        subset_list[item].append(msa_index[best_cluster])
-        print("pair located: ", subset_list[item])
+        if best_cluster is None:
+            continue
+        else:
+            subset_list[item].append(msa_index[best_cluster])
+            print("pair located: ", subset_list[item])
+    pair_list = [x for x in subset_list if len(x) > 1]
 
-    for cluster in subset_list:
+    for cluster in pair_list:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, hash_list, k)
 
     sorted_list = sorted(hash_list, key=lambda x: x[0], reverse=True)
@@ -389,41 +392,47 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
     R = len(C)
     for remaining in msa_index:
         C.append([0, [remaining]])
+    num_clusters = len(C[0:R])
+    cluster_halt = 0
 
     # Stage Two: Move through the pairs in the list and find their best attribute
-    k = len(C)
-    num_clusters = len(C[0:R])
-
     while len(C) >= 1:
-        print("\nNumber of Clusters Remaining: ", num_clusters)
+        print("\n --> Total Remaining ", len(C))
+
         i = 0
         while i < num_clusters:
             location = None
             cluster_mode = msa_map.get(C[i][1][0])
-            max_rii, best_cluster = 0, None
+            max_rii, best_cluster = 0.0, None
+
             for loc, entry in enumerate(C):
-                sr_mode, cluster = entry
+                cluster = entry[1]
                 attr_mode = msa_map.get(cluster[0])
                 if cluster_mode != attr_mode:
                     rii = nmis(num_msa[:, attr_mode], num_msa[:, cluster_mode], average_method='geometric')
                     if rii > max_rii:
                         max_rii, best_cluster, location = rii, cluster, loc
-            C[i][1] = C[i][1] + best_cluster
-            C[i][0], C[i][1] = return_sr_mode(num_msa, msa_map, C[i][1], csv_dict, 0, k)
-            C.pop(location)
-            i += 1
-            k -= 1
-            print("k = ", k)
-            if len(C) == 1:
-                break
-            if location <= num_clusters:
-                num_clusters -= 1
+
+            if best_cluster is None:
+                i += 1
+                cluster_halt += 1
+            else:
+                cluster_halt = 0
+                C[i][1] = C[i][1] + best_cluster
+                C[i][0], C[i][1] = return_sr_mode(num_msa, msa_map, C[i][1], csv_dict, [], len(C))
+                C.pop(location)
+                i += 1
+                print("clusters: ", num_clusters,
+                      " single attributes: ", (len(C) - num_clusters))
+                if len(C) == 1:
+                    break
+                if location <= num_clusters:
+                    num_clusters -= 1
 
         # Re-sort the list
         C = sorted(C, key=lambda x: x[0], reverse=True)
-        print(" --> Next run at ", len(C))
 
-        if num_clusters <= 1:
+        if num_clusters <= 1 or cluster_halt == num_clusters:
             break
 
     print("\n\n--- took " + str(time.time() - start_time) + " seconds ---")
