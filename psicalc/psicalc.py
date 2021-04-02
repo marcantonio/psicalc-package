@@ -153,7 +153,7 @@ def return_sr_mode(msa: np.ndarray, m_map: dict, c: list, c_dict: dict, list_sto
         return sr_mode, new_mode
     elif len(c) == 2:
         i, j = m_map.get(c[0]), m_map.get(c[1])
-        max_sum = nmis(msa[:, i], msa[:, j], average_method='geometric')
+        max_sum = nmis(msa[:, i], msa[:, j])
         new_mode = c
         """
         if max_sum > 1.0:
@@ -169,7 +169,7 @@ def return_sr_mode(msa: np.ndarray, m_map: dict, c: list, c_dict: dict, list_sto
             for location, j in enumerate(c):
                 if location != loc and location > shift:
                     l, r = m_map.get(i), m_map.get(j)
-                    A[loc][1].append(nmis(msa[:, l], msa[:, r], average_method='geometric'))
+                    A[loc][1].append(nmis(msa[:, l], msa[:, r]))
             t = loc
             q = loc + 1
             if q != D:
@@ -358,7 +358,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
             cluster_mode = msa_map.get(cluster)
             subset_mode = msa_map.get(each[0])
             if subset_mode != cluster_mode:
-                rii = nmis(num_msa[:, subset_mode], num_msa[:, cluster_mode], average_method='geometric')
+                rii = nmis(num_msa[:, subset_mode], num_msa[:, cluster_mode])
                 if rii > max_rii:
                     max_rii, best_cluster = rii, location
         if best_cluster is None:
@@ -420,7 +420,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
                 cluster = entry[1]
                 attr_mode = msa_map.get(cluster[0])
                 if cluster_mode != attr_mode:
-                    rii = nmis(num_msa[:, attr_mode], num_msa[:, cluster_mode], average_method='geometric')
+                    rii = nmis(num_msa[:, attr_mode], num_msa[:, cluster_mode])
                     if rii > max_rii:
                         max_rii, best_cluster, location = rii, cluster, loc
 

@@ -128,6 +128,7 @@ def mutual_info_score(labels_true, labels_pred, *, contingency=None):
         contingency = check_array(contingency,
                                   accept_sparse=['csr', 'csc', 'coo'],
                                   dtype=[int, np.int32, np.int64])
+
     if isinstance(contingency, np.ndarray):
         # For an array
         nzx, nzy = np.nonzero(contingency)
@@ -147,7 +148,6 @@ def mutual_info_score(labels_true, labels_pred, *, contingency=None):
     pi = np.ravel(contingency.sum(axis=1))
     pj = np.ravel(contingency.sum(axis=0))
     log_contingency_nm = np.log(nz_val)
-
     contingency_nm = nz_val / contingency_sum
     # Don't need to calculate the full outer product, just for non-zeroes
     outer = (pi.take(nzx).astype(np.int64, copy=False)
@@ -212,9 +212,11 @@ def normalized_mutual_info_score(labels_true, labels_pred, *,
     contingency = contingency_matrix(labels_true, labels_pred, sparse=True)
     contingency = contingency.astype(np.float64,
                                      **_astype_copy_false(contingency))
+
     # Calculate the MI for the two clusterings
     mi = mutual_info_score(labels_true, labels_pred,
                            contingency=contingency)
+
     # Calculate the expected value for the mutual information
     # Calculate entropy for each labeling
     h_true, h_pred = entropy(labels_true), entropy(labels_pred)
@@ -222,4 +224,5 @@ def normalized_mutual_info_score(labels_true, labels_pred, *,
     # Avoid 0.0 / 0.0 when either entropy is zero.
     normalizer = max(normalizer, np.finfo('float64').eps)
     nmi = mi / normalizer
+
     return nmi
