@@ -194,7 +194,7 @@ def _generalized_average(U, V, average_method):
 
 @_deprecate_positional_args
 def normalized_mutual_info_score(labels_true, labels_pred, *,
-                                 average_method='arithmetic'):
+                                 average_method='geometric'):
 
     labels_true, labels_pred = check_clusterings(labels_true, labels_pred)
     classes = np.unique(labels_true)
@@ -224,5 +224,9 @@ def normalized_mutual_info_score(labels_true, labels_pred, *,
     # Avoid 0.0 / 0.0 when either entropy is zero.
     normalizer = max(normalizer, np.finfo('float64').eps)
     nmi = mi / normalizer
+    # Avoid problems associated with low entropy regions
+    # not normalizing correctly
+    if nmi > 1.0:
+        nmi = 0.0
 
     return nmi
