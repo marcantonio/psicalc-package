@@ -327,12 +327,23 @@ def remove_high_insertion_sites(df: pd.DataFrame, value: int) -> pd.DataFrame:
     return df
 
 
-def return_dict_state() -> dict:
+def return_dict_state():
     """Useful for returning the values of the global cluster dictionary
     at an intermediate stage. For example, a user may want to end a long
     running process and grab the available data prior to exit."""
 
-    return csv_dict
+    global halt
+    if halt is False:
+        halt = True
+
+    return
+
+
+def signal_halt() -> bool:
+    """Gets the state of the halt global variable. Allows for termination
+    of long running process in a safe manner."""
+
+    return halt
 
 
 def find_clusters(spread: int, df: pd.DataFrame) -> dict:
@@ -340,7 +351,8 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
     Provide a dataframe and a sample spread-width. Returns a dictionary."""
     print("\nEncoding MSA. This may take a while.")
 
-    global csv_dict
+    global halt
+    halt = False
     csv_dict = dict()
     k = "pairwise"
     start_time = time.time()
@@ -408,10 +420,13 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
 
     # Stage Two: Move through the pairs in the list and find their best attribute
     while len(C) >= 1:
+
+        if signal_halt(): break
         print("\n --> Total Remaining ", len(C))
 
         i = 0
         while i < num_clusters:
+            if signal_halt(): break
             location = None
             cluster_mode = msa_map.get(C[i][1][0])
             max_rii, best_cluster = 0.0, None
