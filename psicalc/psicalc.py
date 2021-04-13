@@ -462,5 +462,6 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
             break
 
     print("\n\n--- took " + str(time.time() - start_time) + " seconds ---")
+    halt = False
 
     return csv_dict
