@@ -153,7 +153,7 @@ def return_sr_mode(msa: np.ndarray, m_map: dict, c: list, c_dict: dict, list_sto
         return sr_mode, new_mode
     elif len(c) == 2:
         i, j = m_map.get(c[0]), m_map.get(c[1])
-        max_sum = nmis(msa[:, i], msa[:, j])
+        max_sum = nmis(msa[:, i], msa[:, j], average_method='geometric')
         new_mode = c
         """
         if max_sum > 1.0:
@@ -169,7 +169,7 @@ def return_sr_mode(msa: np.ndarray, m_map: dict, c: list, c_dict: dict, list_sto
             for location, j in enumerate(c):
                 if location != loc and location > shift:
                     l, r = m_map.get(i), m_map.get(j)
-                    A[loc][1].append(nmis(msa[:, l], msa[:, r]))
+                    A[loc][1].append(nmis(msa[:, l], msa[:, r], average_method='geometric'))
             t = loc
             q = loc + 1
             if q != D:
@@ -370,7 +370,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
             cluster_mode = msa_map.get(cluster)
             subset_mode = msa_map.get(each[0])
             if subset_mode != cluster_mode:
-                rii = nmis(num_msa[:, subset_mode], num_msa[:, cluster_mode])
+                rii = nmis(num_msa[:, subset_mode], num_msa[:, cluster_mode], average_method='geometric')
                 if rii > max_rii:
                     max_rii, best_cluster = rii, location
         if best_cluster is None:
@@ -426,6 +426,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
 
         i = 0
         while i < num_clusters:
+
             if signal_halt(): break
             location = None
             cluster_mode = msa_map.get(C[i][1][0])
@@ -435,13 +436,14 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
                 cluster = entry[1]
                 attr_mode = msa_map.get(cluster[0])
                 if cluster_mode != attr_mode:
-                    rii = nmis(num_msa[:, attr_mode], num_msa[:, cluster_mode])
+                    rii = nmis(num_msa[:, attr_mode], num_msa[:, cluster_mode], average_method='geometric')
                     if rii > max_rii:
                         max_rii, best_cluster, location = rii, cluster, loc
 
             if best_cluster is None:
                 i += 1
                 cluster_halt += 1
+
             else:
                 cluster_halt = 0
                 C[i][1] = C[i][1] + best_cluster
@@ -458,7 +460,7 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
         # Re-sort the list
         C = sorted(C, key=lambda x: x[0], reverse=True)
 
-        if num_clusters <= 1 or cluster_halt == num_clusters:
+        if num_clusters <= 1 or cluster_halt >= num_clusters:
             break
 
     print("\n\n--- took " + str(time.time() - start_time) + " seconds ---")
