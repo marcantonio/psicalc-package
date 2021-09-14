@@ -187,7 +187,8 @@ def return_sr_mode(msa: np.ndarray, m_map: dict, c: list, c_dict: dict, list_sto
     sr_mode = max_sum / cc
     if k == "pairwise" or k == "post-agg":
         list_store.append([sr_mode, new_mode])
-    if k != "pairwise":
+
+    if k != "pairwise" or k == "pairwise_only":
         c_dict[tuple(sorted(tuple(c)))] = [round(sr_mode, 6), k]
 
     return sr_mode, new_mode
@@ -346,15 +347,21 @@ def signal_halt() -> bool:
     return halt
 
 
-def find_clusters(spread: int, df: pd.DataFrame) -> dict:
+def find_clusters(spread: int, df: pd.DataFrame, k="pairwise") -> dict:
     """Discovers cluster sites with high shared normalized mutual information.
-    Provide a dataframe and a sample spread-width. Returns a dictionary."""
+    Provide a dataframe and a sample spread-width. Returns a dictionary.
+
+    The variable k by default is set to 'pairwise' to look for pairwise clusters
+    and aggregate them prior to running Phase 2. Users may also set k to 'pairwise_only'
+    if they only want to output pairwise clusters without aggregating them, in which
+    case the program will halt once all pairwise clusters are found. This may be useful
+    when comparing to methods like DCA."""
+
     print("\nEncoding MSA. This may take a while.")
 
     global halt
     halt = False
     csv_dict = dict()
-    k = "pairwise"
     start_time = time.time()
     hash_list = list()
     msa_index = df.columns.tolist()
@@ -382,6 +389,9 @@ def find_clusters(spread: int, df: pd.DataFrame) -> dict:
 
     for cluster in pair_list:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, hash_list, k)
+
+    if k == "pairwise_only":
+        return csv_dict
 
     sorted_list = sorted(hash_list, key=lambda x: x[0], reverse=True)
     out_list = [x for x in sorted_list if x[0] >= 0.10]
