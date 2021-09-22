@@ -347,6 +347,13 @@ def signal_halt() -> bool:
     return halt
 
 
+def calculate_time(start):
+    """Calculate time taken for program execution."""
+    print("\n\n--- took " + str(round((time.time() - start), 3)) + " seconds ---")
+
+    return
+
+
 def find_clusters(spread: int, df: pd.DataFrame, k="pairwise") -> dict:
     """Discovers cluster sites with high shared normalized mutual information.
     Provide a dataframe and a sample spread-width. Returns a dictionary.
@@ -376,6 +383,7 @@ def find_clusters(spread: int, df: pd.DataFrame, k="pairwise") -> dict:
         for location, cluster in enumerate(msa_index):
             cluster_mode = msa_map.get(cluster)
             subset_mode = msa_map.get(each[0])
+
             if subset_mode != cluster_mode:
                 rii = nmis(num_msa[:, subset_mode], num_msa[:, cluster_mode], average_method='geometric')
                 if rii > max_rii:
@@ -391,6 +399,7 @@ def find_clusters(spread: int, df: pd.DataFrame, k="pairwise") -> dict:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, hash_list, k)
 
     if k == "pairwise_only":
+        calculate_time(start_time)
         return csv_dict
 
     sorted_list = sorted(hash_list, key=lambda x: x[0], reverse=True)
@@ -414,6 +423,9 @@ def find_clusters(spread: int, df: pd.DataFrame, k="pairwise") -> dict:
                 print("\nFAILED: Tried to remove site location ", col, "but it was not found.\n"
                        "This is likely due to duplicates not being removed during aggregation.")
                 sys.exit()
+    if len(msa_index) == 0:
+        calculate_time(start_time)
+        return csv_dict
 
     print("\nTop ranked clusters:")
     num = 0
@@ -477,7 +489,7 @@ def find_clusters(spread: int, df: pd.DataFrame, k="pairwise") -> dict:
     except KeyboardInterrupt:
         return_dict_state()
 
-    print("\n\n--- took " + str(time.time() - start_time) + " seconds ---")
+    calculate_time(start_time)
     halt = False
 
     return csv_dict
