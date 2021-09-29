@@ -185,7 +185,7 @@ def return_sr_mode(msa: np.ndarray, m_map: dict, c: list, c_dict: dict, list_sto
         new_mode = return_new_mode(mode_loc, c)
 
     sr_mode = max_sum / cc
-    if k == "pairwise" or k == "post-agg":
+    if k == "pairwise" or k == "top-pairwise":
         list_store.append([sr_mode, new_mode])
 
     if k != "pairwise" or k == "pairwise_only":
@@ -204,31 +204,36 @@ def return_new_mode(location: int, c: list) -> list:
     return c
 
 
-def aggregate(agg: list) -> list:
-    """Finds clusters with overlapping attributes and consolidates them inplace."""
+def check_intersections(agg: list) -> list:
+    """Finds clusters with overlapping attributes and takes the one
+    with the highest sr_mode value."""
     idx = 0
     while idx < len(agg):
         iex = 0
+
         while iex < len(agg):
-            set1, set2 = set(agg[idx]), set(agg[iex])
+            set1_sr_mode, set2_sr_mode = agg[idx][0], agg[iex][0]
+            set1, set2 = set(agg[idx][1]), set(agg[iex][1])
 
             # check for intersections
             if set1 != set2 and set1.intersection(set2):
-                agg[idx] = list(set1.union(set2))
-                del agg[iex]
-                iex -= 1
-
-            # check for permutations
-            elif set1 == set2:
-                if agg[idx][0] != agg[iex][0]:
+                if set1_sr_mode > set2_sr_mode:
                     del agg[iex]
                     iex -= 1
+                else:
+                    del agg[idx]
+                    idx -= 1
+
+            # check for permutations
+            elif set1 == set2 and agg[idx][1][0] != agg[iex][1][0]:
+                del agg[iex]
+                iex -= 1
             else:
                 pass
             iex += 1
         idx += 1
 
-    return agg
+    return [j for x, j in agg]
 
 
 def write_output_data(spread: int, c_dict: dict):
@@ -398,18 +403,18 @@ def find_clusters(spread: int, df: pd.DataFrame, k="pairwise") -> dict:
     for cluster in pair_list:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, hash_list, k)
 
+    # Used only when user selects to obtain pairwise clusters only
     if k == "pairwise_only":
         calculate_time(start_time)
         return csv_dict
 
+    # Sort list by Sr_Mode and generate sorted list of labels
     sorted_list = sorted(hash_list, key=lambda x: x[0], reverse=True)
     out_list = [x for x in sorted_list if x[0] >= 0.10]
-    dataframe_label_list = [j for x, j in out_list]
+    final_df_set = check_intersections(out_list)
 
-    # Check for repeat attributes between pairwise clusters
-    final_df_set = aggregate(dataframe_label_list)
     unranked = list()
-    k = "post-agg"  # means clusters which made it through post-aggregation
+    k = "top-pairwise"
     for cluster in final_df_set:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, unranked, k)
 
@@ -421,8 +426,9 @@ def find_clusters(spread: int, df: pd.DataFrame, k="pairwise") -> dict:
                 msa_index.remove(col)
             except ValueError:
                 print("\nFAILED: Tried to remove site location ", col, "but it was not found.\n"
-                       "This is likely due to duplicates not being removed during aggregation.")
+                       "This is likely due to duplicates not being removed during check_intersections().")
                 sys.exit()
+
     if len(msa_index) == 0:
         calculate_time(start_time)
         return csv_dict
