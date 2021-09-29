@@ -205,7 +205,8 @@ def return_new_mode(location: int, c: list) -> list:
 
 
 def check_intersections(agg: list) -> list:
-    """Finds clusters with overlapping attributes and consolidates them inplace."""
+    """Finds clusters with overlapping attributes and takes the one
+    with the highest sr_mode value."""
     idx = 0
     while idx < len(agg):
         iex = 0
