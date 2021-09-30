@@ -212,6 +212,7 @@ def check_intersections(agg: list) -> list:
         iex = 0
 
         while iex < len(agg):
+
             set1_sr_mode, set2_sr_mode = agg[idx][0], agg[iex][0]
             set1, set2 = set(agg[idx][1]), set(agg[iex][1])
 
@@ -223,14 +224,15 @@ def check_intersections(agg: list) -> list:
                 else:
                     del agg[idx]
                     idx -= 1
+                    break
 
             # check for permutations
             elif set1 == set2 and agg[idx][1][0] != agg[iex][1][0]:
                 del agg[iex]
                 iex -= 1
             else:
-                pass
-            iex += 1
+                iex += 1
+
         idx += 1
 
     return [j for x, j in agg]
@@ -398,19 +400,23 @@ def find_clusters(spread: int, df: pd.DataFrame, k="pairwise") -> dict:
         else:
             subset_list[item].append(msa_index[best_cluster])
             print("pair located: ", subset_list[item])
+
     pair_list = [x for x in subset_list if len(x) > 1]
 
     for cluster in pair_list:
         return_sr_mode(num_msa, msa_map, cluster, csv_dict, hash_list, k)
 
+    # Sort list by Sr_Mode and generate sorted list of labels
+    # May also return pairwise data if no strong sites are found
+    sorted_list = sorted(hash_list, key=lambda x: x[0], reverse=True)
+    out_list = [x for x in sorted_list if x[0] >= 0.10]
+
     # Used only when user selects to obtain pairwise clusters only
-    if k == "pairwise_only":
+    if k == "pairwise_only" or len(out_list) == 0:
         calculate_time(start_time)
         return csv_dict
 
-    # Sort list by Sr_Mode and generate sorted list of labels
-    sorted_list = sorted(hash_list, key=lambda x: x[0], reverse=True)
-    out_list = [x for x in sorted_list if x[0] >= 0.10]
+    # Check for attribute intersections between pairwise clusters
     final_df_set = check_intersections(out_list)
 
     unranked = list()
