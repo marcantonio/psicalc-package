@@ -1,5 +1,5 @@
 /PSICalc Pfam Datasets for analaysis/
 /PSICalc Pfam Results/
-test.py
 script.py
 setup.py
+batch_job.py
