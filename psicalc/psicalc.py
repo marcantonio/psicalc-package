@@ -59,6 +59,8 @@ def deweese_schema(df: pd.DataFrame, pattern='^-') -> pd.DataFrame:
         first_row_ix = df.index[0]
         if '(' in first_row_ix:
             ix_label = first_row_ix.rsplit('(', 1)
+        elif ':' in first_row_ix:
+            ix_label = first_row_ix.rsplit(':', 1)
         else:
             ix_label = first_row_ix.rsplit('/', 1)
         ix_label = ix_label[1]
@@ -114,10 +116,26 @@ def read_txt_file_format(file) -> pd.DataFrame:
         a_file.close()
 
     vals = string_without_line_breaks.split('>')
+
+    def recurse_del(line):
+        """Recursively delete unwanted data from a line."""
+        if len(line) > 2:
+            line.remove(line[1])
+            recurse_del(line)
+        else:
+            return
+
     for line in vals:
-        line = re.split('([\w\|]+/\d*-?\d*)', line)
+        # (\w) find any number of ASCII chars followed by "/" and a combination
+        # of ints (\d) with a hyphen between
+        line = re.split('([\w\s\|\.]+[:|/]\d*-?\d*)', line)
         line.remove('')
         for i in enumerate(line):
+            if len(line) > 2:
+                recurse_del(line)
+            if re.search('[\[\]]+', line[1]):
+                line[1] = re.split('(\])', line[1])[2]
+
             g = list(line[1])
             nucs_dict.update({line[0]: g})
 
