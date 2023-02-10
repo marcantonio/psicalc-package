@@ -27,7 +27,7 @@ import time
 import csv
 import pandas as pd
 import numpy as np
-from itertools import combinations
+from itertools import combinations, filterfalse
 from .nmi import normalized_mutual_info_score as nmis
 
 
@@ -48,17 +48,22 @@ def durston_schema(df: pd.DataFrame, value: int) -> pd.DataFrame:
 
 
 # noinspection PyUnresolvedReferences
-def deweese_schema(df: pd.DataFrame, pattern='^-') -> pd.DataFrame:
+def deweese_schema(df: pd.DataFrame, pattern='^-'):
     """Labels data based on the range on the row in the MSA with the least insertions.
     As an option, you can supply a different regex if the MSA uses different
-    symbols to represent insertions."""
+    symbols to represent insertions. Returns the name of the best row and the resultant
+    MSA in a pandas dataframe."""
 
     try:
         least = None
         map_row = 0
         for index, row in df.iterrows():
             series = row.value_counts()
-            null_ct = series['-']
+            try:
+                null_ct = series['-']
+            except KeyError:
+                null_ct = 0
+                map_row = index
             if least is None:
                 least = null_ct
             else:
@@ -66,7 +71,6 @@ def deweese_schema(df: pd.DataFrame, pattern='^-') -> pd.DataFrame:
                     least = null_ct
                     map_row = index
         row_ix = map_row
-        print(row_ix)
 
         if '(' in row_ix:
             ix_label = row_ix.rsplit('(', 1)
@@ -102,7 +106,7 @@ def deweese_schema(df: pd.DataFrame, pattern='^-') -> pd.DataFrame:
     except IndexError or KeyError:
         sys.exit(1)
 
-    return df
+    return row_ix, df
 
 
 def check_for_duplicates(df: pd.DataFrame) -> pd.DataFrame:
@@ -118,37 +122,16 @@ def check_for_duplicates(df: pd.DataFrame) -> pd.DataFrame:
 
 def read_txt_file_format(file) -> pd.DataFrame:
     """Reads FASTA files or text file-based MSAs into a dataframe."""
-    nucs_dict = dict()
-    with open(file, "r") as a_file:
-        string_without_line_breaks = ""
-        for line in a_file:
-            stripped_line = line.rstrip()
-            string_without_line_breaks += stripped_line
-        a_file.close()
-
-    vals = string_without_line_breaks.split('>')
-
-    def recurse_del(line):
-        """Recursively delete unwanted data from a line."""
-        if len(line) > 2:
-            line.remove(line[1])
-            recurse_del(line)
-        else:
-            return
-
-    for line in vals:
-        # (\w) find any number of ASCII chars followed by "/" and a combination
-        # of ints (\d) with a hyphen between
-        line = re.split('([\w\s\|\.]+[:|/]\d*-?\d*)', line)
-        line.remove('')
-        for i in enumerate(line):
-            if len(line) > 2:
-                recurse_del(line)
-            if re.search('[\[\]]+', line[1]):
-                line[1] = re.split('(\])', line[1])[2]
-
-            g = list(line[1])
-            nucs_dict.update({line[0]: g})
+    id, seq = [], []
+    with open(file, "r") as fasta_file:
+        for line in fasta_file:
+            if line.startswith(">"):
+                id.append(line.strip("\n").strip(">"))
+            elif line:
+                seq.append([*line.strip("\n")])
+        res = list(zip(id, seq))
+        fasta_file.close()
+    nucs_dict = dict(res)
 
     df = pd.DataFrame.from_dict(nucs_dict, orient='index')
     df = df.replace({'.': '-'})
