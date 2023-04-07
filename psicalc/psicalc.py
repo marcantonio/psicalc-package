@@ -48,36 +48,22 @@ def durston_schema(df: pd.DataFrame, value: int) -> pd.DataFrame:
 
 
 # noinspection PyUnresolvedReferences
-def deweese_schema(df: pd.DataFrame, pattern='^-'):
-    """Labels data based on the range on the row in the MSA with the least insertions.
+def deweese_schema(df: pd.DataFrame, pattern='^-') -> pd.DataFrame:
+    """Labels data based on the range on the first row of the MSA.
+    For example, if the first row is labelled TOP2 YEAST/59-205, then all
+    columns with individuals in the first row are kept and labeled 59-205.
+
     As an option, you can supply a different regex if the MSA uses different
-    symbols to represent insertions. Returns the name of the best row and the resultant
-    MSA in a pandas dataframe."""
+    symbols to represent insertions."""
 
     try:
-        least = None
-        map_row = 0
-        for index, row in df.iterrows():
-            series = row.value_counts()
-            try:
-                null_ct = series['-']
-            except KeyError:
-                null_ct = 0
-                map_row = index
-            if least is None:
-                least = null_ct
-            else:
-                if null_ct < least:
-                    least = null_ct
-                    map_row = index
-        row_ix = map_row
-
-        if '(' in row_ix:
-            ix_label = row_ix.rsplit('(', 1)
-        elif ':' in row_ix:
-            ix_label = row_ix.rsplit(':', 1)
+        first_row_ix = df.index[0]
+        if '(' in first_row_ix:
+            ix_label = first_row_ix.rsplit('(', 1)
+        elif ':' in first_row_ix:
+            ix_label = first_row_ix.rsplit(':', 1)
         else:
-            ix_label = row_ix.rsplit('/', 1)
+            ix_label = first_row_ix.rsplit('/', 1)
         ix_label = ix_label[1]
         ix_label = ix_label.rsplit('-', 1)
         df_label = int(ix_label[0])
@@ -85,14 +71,14 @@ def deweese_schema(df: pd.DataFrame, pattern='^-'):
 
         if pattern == 'None':
             for i in df:
-                if df[i].loc[row_ix] is not None:
+                if df[i].iloc[0] is not None:
                     column_lab_dict[df.columns[i]] = df_label
                     df_label += 1
                 else:
                     column_lab_dict[df.columns[i]] = ''
         else:
             for i in df:
-                if not re.search(pattern, df[i].loc[row_ix]):
+                if not re.search(pattern, df[i].iloc[0]):
                     column_lab_dict[df.columns[i]] = df_label
                     df_label += 1
                 else:
@@ -106,7 +92,7 @@ def deweese_schema(df: pd.DataFrame, pattern='^-'):
     except IndexError or KeyError:
         sys.exit(1)
 
-    return row_ix, df
+    return df
 
 
 def check_for_duplicates(df: pd.DataFrame) -> pd.DataFrame:
