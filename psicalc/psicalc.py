@@ -25,11 +25,14 @@ import sys
 import re
 import time
 import csv
+import warnings
 import pandas as pd
 import numpy as np
 from itertools import combinations, filterfalse
 from .nmi import normalized_mutual_info_score as nmis
 from .nmi import entropy
+
+warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
 
 def select_subset(c_list: list, s: int):
