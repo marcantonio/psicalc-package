@@ -35,6 +35,7 @@ from .nmi_cache import NmiCache
 
 warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
+halt = False
 nmi_cache = NmiCache(normalized_mutual_info_score)
 
 
@@ -591,5 +592,6 @@ def find_clusters(spread: int, msa: pd.DataFrame, k="pairwise", e=0.0) -> dict:
 
     calculate_time(start_time)
     halt = False
+    nmi_cache.clear()
 
     return csv_dict

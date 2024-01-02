@@ -16,3 +16,6 @@ class NmiCache:
             self.cache[a] = {b: self.nmi_func(msa[:, a], msa[:, b])}
 
         return self.cache[a][b]
+
+    def clear(self):
+        self.cache = dict()
