@@ -434,7 +434,6 @@ def filter_entropy(msa: np.ndarray, column_map: dict, e: float) -> (np.ndarray, 
     return msa, msa_names, low_entropy_sites
 
 
-
 def find_clusters(spread: int, msa: pd.DataFrame, k="pairwise", e=0.0) -> dict:
     """
     Discovers cluster sites with high shared normalized mutual information.

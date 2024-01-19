@@ -8,7 +8,12 @@ class NmiCache:
         self.nmi_func = f
 
     def get(self, a, b, msa):
-        (a, b) = sorted([a, b])
+        # Uncommenting this is a big perf gain. However, due to asymmetries in the nmi
+        # calculation (caused by floating point inconsistencies) there are sometimes large
+        # differences that lead to issues. For example, in the hist test data, (127, 128)
+        # == 0 but (128, 127) = 1.0.
+        #(a, b) = sorted([a, b])
+
         if a in self.cache:
             if b not in self.cache[a]:
                 self.cache[a][b] = self.nmi_func(msa[:, a], msa[:, b])
