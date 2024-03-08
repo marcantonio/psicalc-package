@@ -17,6 +17,15 @@ class NmiCache:
         if a in self.cache:
             if b not in self.cache[a]:
                 self.cache[a][b] = self.nmi_func(msa[:, a], msa[:, b])
+
+                v = self.nmi_func(msa[:, b], msa[:, a])
+                if v != self.cache[a][b]:
+                    if v >= 1.0 or self.cache[a][b] >= 1.0:
+                        print("HERE")
+                    print(msa[:, a])
+                    print(msa[:, b])
+                    print(f"({a}, {b}): {self.cache[a][b]}")
+                    print(f"({b}, {a}): {v}")
         else:
             self.cache[a] = {b: self.nmi_func(msa[:, a], msa[:, b])}
 
