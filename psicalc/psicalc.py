@@ -29,14 +29,14 @@ import warnings
 import pandas as pd
 import numpy as np
 from itertools import combinations
-from .nmi import entropy
-from .nmi import normalized_mutual_info_score
-from .nmi_cache import NmiCache
+from .nmi import normalized_mutual_info_score, entropy, EPSILON
+import psicalc.nmi_util as nmi_util
 
 warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
 halt = False
-nmi_cache = NmiCache(normalized_mutual_info_score)
+nmi_util.EPSILON = EPSILON
+nmi_cache = nmi_util.NmiCache(normalized_mutual_info_score)
 
 
 def select_subset(c_list: list, s: int):
@@ -186,7 +186,12 @@ def return_sr_mode(msa: np.ndarray, m_map: dict, c: list, c_dict: dict, list_sto
                     t += 1
                 shift += 1
 
-        mode_map = np.array([np.sum(v) for (k, v) in A], dtype='d')
+        # XXX: Temp for test
+        if nmi_cache._use_esp:
+            mode_map = np.array([np.sum([item.value for item in v]) for (k, v) in A], dtype='d')
+        else:
+            mode_map = np.array([np.sum(v) for (k, v) in A], dtype='d')
+
         mode_loc = int(np.argmax(mode_map))
         max_sum = np.amax(mode_map)
         new_mode = return_new_mode(mode_loc, c)
@@ -434,7 +439,7 @@ def filter_entropy(msa: np.ndarray, column_map: dict, e: float) -> (np.ndarray, 
     return msa, msa_names, low_entropy_sites
 
 
-def find_clusters(spread: int, msa: pd.DataFrame, k="pairwise", e=0.0) -> dict:
+def find_clusters(spread: int, msa: pd.DataFrame, k="pairwise", e=0.0, _use_esp=False) -> dict:
     """
     Discovers cluster sites with high shared normalized mutual information.
     Provide a dataframe and a sample spread-width. Returns a dictionary.
@@ -454,6 +459,10 @@ def find_clusters(spread: int, msa: pd.DataFrame, k="pairwise", e=0.0) -> dict:
     csv_dict = dict()
     start_time = time.time()
     hash_list = list()
+
+    #XXX: Temp for testing
+    global nmi_cache
+    nmi_cache = nmi_util.NmiCache(normalized_mutual_info_score, _use_esp)
 
     # Map labels to columns
     msa, column_map = prepare_data(msa.copy(deep=True))

@@ -20,12 +20,14 @@
 
 import numpy as np
 import warnings
-from math import log
+import math
 from scipy import sparse as sp
 from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.fixes import _astype_copy_false
 from sklearn.utils.validation import check_array, check_consistent_length
 from sklearn.utils.validation import _deprecate_positional_args
+
+EPSILON = 1e-9
 
 
 def check_clusterings(labels_true, labels_pred):
@@ -76,9 +78,9 @@ def contingency_matrix(labels_true, labels_pred, *, eps=None, sparse=False,
     clusters, cluster_idx = np.unique(labels_pred, return_inverse=True)
     n_classes = classes.shape[0]
     n_clusters = clusters.shape[0]
-    if classes[0] == 0 : class_gaps = True
-    if clusters[0] == 0 : cluster_gaps = True
-    if class_gaps and cluster_gaps : both = True
+    if classes[0] == 0: class_gaps = True
+    if clusters[0] == 0: cluster_gaps = True
+    if class_gaps and cluster_gaps: both = True
     # Using coo_matrix to accelerate simple histogram calculation,
     # i.e. bins are consecutive integers
     # Currently, coo_matrix is faster than histogram2d for simple cases
@@ -152,8 +154,8 @@ def mutual_info_score(labels_true, labels_pred, *, contingency=None):
     # Don't need to calculate the full outer product, just for non-zeroes
     outer = (pi.take(nzx).astype(np.int64, copy=False)
              * pj.take(nzy).astype(np.int64, copy=False))
-    log_outer = -np.log(outer) + log(pi.sum()) + log(pj.sum())
-    mi = (contingency_nm * (log_contingency_nm - log(contingency_sum)) +
+    log_outer = -np.log(outer) + math.log(pi.sum()) + math.log(pj.sum())
+    mi = (contingency_nm * (log_contingency_nm - math.log(contingency_sum)) +
           contingency_nm * log_outer)
     mi = np.where(np.abs(mi) < np.finfo(mi.dtype).eps, 0.0, mi)
 
@@ -181,7 +183,7 @@ def entropy(labels):
 
     # log(a / b) should be calculated as log(a) - log(b) for
     # possible loss of precision
-    return -np.sum((pi / pi_sum) * (np.log(pi) - log(pi_sum)))
+    return -np.sum((pi / pi_sum) * (np.log(pi) - math.log(pi_sum)))
 
 
 def _generalized_average(U, V, average_method):
@@ -201,7 +203,8 @@ def _generalized_average(U, V, average_method):
 
 @_deprecate_positional_args
 def normalized_mutual_info_score(labels_true, labels_pred, *,
-                                 average_method='geometric'):
+                                 average_method='geometric',
+                                 _use_esp=False):
     """
     This is the core function of the library originally from Pedregosa/sci-kit
     but we've introduced modifications to handle problems associated with MSAs:
@@ -249,7 +252,11 @@ def normalized_mutual_info_score(labels_true, labels_pred, *,
     nmi = mi / normalizer
     # Avoid problems associated with low entropy regions
     # not normalizing correctly
-    if nmi > 1.0:
-        nmi = 0.0
+    if _use_esp:  # XXX: Temp for testing
+        if nmi > 1.0 and not math.isclose(nmi, 1.0, rel_tol=EPSILON):
+            nmi = 0.0
+    else:
+        if nmi > 1.0:
+            nmi = 0.0
 
     return nmi
