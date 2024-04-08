@@ -7,7 +7,7 @@ nu.EPSILON = 1e-9
 
 BASE = 1.0
 
-# python -m unittest src/psicalc/tests.py
+# PYTHONPATH=./src python -m unittest tests/epsilon.py
 
 
 class EpsilonTest(unittest.TestCase):
