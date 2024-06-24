@@ -98,7 +98,7 @@ def deweese_schema(df: pd.DataFrame, pattern='^-') -> pd.DataFrame:
         df = df.rename(columns=lambda x: int(x))
 
     except IndexError or KeyError:
-        sys.exit(1)
+        raise Exception("invalid Deweese schema")
 
     return df
 
@@ -116,15 +116,21 @@ def check_for_duplicates(df: pd.DataFrame) -> pd.DataFrame:
 
 def read_txt_file_format(file) -> pd.DataFrame:
     """Reads FASTA files or text file-based MSAs into a dataframe."""
-    id, seq = [], []
+    ids, sequences = [], []
     with open(file, "r") as fasta_file:
+        data = []
         for line in fasta_file:
             if line.startswith(">"):
-                id.append(line.strip("\n").strip(">"))
+                if ids:
+                    sequences.append(data)
+                    data = []
+                ids.append(line.strip(">").strip())
             elif line:
-                seq.append([*line.strip("\n")])
-        res = list(zip(id, seq))
-        fasta_file.close()
+                data.extend(line.strip())
+
+        sequences.append(data)
+        res = list(zip(ids, sequences))
+
     nucs_dict = dict(res)
 
     df = pd.DataFrame.from_dict(nucs_dict, orient='index')
