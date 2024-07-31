@@ -1,5 +1,4 @@
 /datasets/*
-/setup.py
 /.python-version
 **/__pycache__
 /dist
