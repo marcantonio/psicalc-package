@@ -1,0 +1,27 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-fno-strict-overflow",
+      "-Wsign-compare",
+      "-Wunreachable-code",
+      "-fno-common",
+      "-dynamic",
+      "-DNDEBUG",
+      "-g",
+      "-O3",
+      "-Wall",
+      "-I/Users/mas/.pyenv/versions/3.12.2/envs/psicalc/lib/python3.12/site-packages/pybind11/include",
+      "-I/Users/mas/.pyenv/versions/3.12.2/envs/psicalc/include",
+      "-I/Users/mas/.pyenv/versions/3.12.2/Library/Frameworks/Python.framework/Versions/3.12/include/python3.12",
+      "-c",
+      "-std=c++11",
+      "-o",
+      "build/temp.macosx-12.5-x86_64-cpython-312/sum_array.o",
+      "sum_array.cc"
+    ],
+    "directory": "/Users/mas/Code/psicalc/psicalc-package",
+    "file": "/Users/mas/Code/psicalc/psicalc-package/sum_array.cc",
+    "output": "/Users/mas/Code/psicalc/psicalc-package/build/temp.macosx-12.5-x86_64-cpython-312/sum_array.o"
+  }
+]
